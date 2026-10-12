@@ -43,9 +43,14 @@ async function loadData() {
     .map((d) => ({ date: new Date(d.date + "T00:00:00Z"), count: d.contributionCount }))
     .filter((d) => d.date <= today);
 
+  // Start from the first day that begins steady activity (3+ active days within 30 days),
+  // so a stray old commit doesn't stretch the chart. Go rolling only when that is a year back.
   const hasHistory = a.viewer.prev.contributionCalendar.totalContributions > 0;
-  const first = days.find((d) => d.count > 0);
-  const rolling = hasHistory || !first;
+  const activeDays = days.filter((d) => d.count > 0);
+  const first =
+    activeDays.find((d) => activeDays.filter((x) => x.date >= d.date && x.date - d.date < 30 * DAY).length >= 3) ||
+    activeDays[0];
+  const rolling = !first || (hasHistory && first.date - yearAgo < 30 * DAY);
   const start = rolling ? yearAgo : first.date;
 
   const b = await gql(
@@ -207,9 +212,14 @@ function render(data, theme) {
     let lx = PAD;
     top.forEach(([n, p, c]) => {
       const label = `${n} ${Math.round(p * 100)}%`;
+      const itemW = 13 + label.length * 6.9;
+      if (lx > PAD && lx + itemW > W - PAD) {
+        lx = PAD;
+        y += 18;
+      }
       svg += `<circle cx="${lx + 4}" cy="${y - 4}" r="4" fill="${c}"/>`;
       svg += `<text x="${lx + 13}" y="${y}" font-family="${SANS}" font-size="11" fill="${t.sub}">${esc(label)}</text>`;
-      lx += 13 + label.length * 6.2 + 16;
+      lx += itemW + 14;
     });
   }
 
