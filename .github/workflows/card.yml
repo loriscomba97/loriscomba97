@@ -1,4 +1,4 @@
-name: Aggiorna card statistiche
+name: Update stats card
 
 on:
   schedule:
@@ -21,15 +21,15 @@ jobs:
         with:
           node-version: 22
 
-      - name: Genera SVG
+      - name: Generate SVG
         run: node scripts/card.mjs
         env:
           GH_TOKEN: ${{ secrets.METRICS_TOKEN }}
 
-      - name: Commit se cambiato
+      - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add card-light.svg card-dark.svg
-          git diff --cached --quiet || git commit -m "Aggiorna card statistiche"
+          git diff --cached --quiet || git commit -m "Update stats card"
           git push
